@@ -5,10 +5,12 @@ import tempfile
 import os
 import pickle
 import random
+import textract
+import docx2txt
 
 # Load training data
-train_data = pickle.load(open('D:/NEW RESUME GIT/Resume_Parser_Test/Train.pkl', 'rb'))
-print (train_data)
+train_data = pickle.load(open('D:/NEW RESUME GIT/Resume_Parser_Test/training_data.pkl', 'rb'))
+
 # Define function to train the model
 def train_model(train_data):
     nlp = spacy.blank('en')
@@ -61,9 +63,32 @@ def process_pdf(file_path):
         validated_entities = [(label, value) for label, values in entities.items() for value in values]
         return validated_entities
 
+def process_text(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        text = f.read()
+        doc = nlp_model(text)
+        entities = {}
+        for ent in doc.ents:
+            if ent.label_ not in entities:
+                entities[ent.label_] = set()
+            entities[ent.label_].add(ent.text)
+        validated_entities = [(label, value) for label, values in entities.items() for value in values]
+        return validated_entities
+
+def process_doc(file_path):
+    text = docx2txt.process(file_path)
+    doc = nlp_model(text)
+    entities = {}
+    for ent in doc.ents:
+        if ent.label_ not in entities:
+            entities[ent.label_] = set()
+        entities[ent.label_].add(ent.text)
+    validated_entities = [(label, value) for label, values in entities.items() for value in values]
+    return validated_entities
+
 # Streamlit app
-st.title("PDF NER Extraction")
-uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
+st.title("NER Extraction")
+uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx"])
 
 if uploaded_file is not None:
     # Save the uploaded file to a temporary location
@@ -71,8 +96,16 @@ if uploaded_file is not None:
         temp_file.write(uploaded_file.read())
         temp_file_path = temp_file.name
 
-    # Process the uploaded file
-    entities = process_pdf(temp_file_path)
+    # Process the uploaded file based on the file type
+    file_ext = os.path.splitext(temp_file_path)[1]
+    if file_ext == ".pdf":
+        entities = process_pdf(temp_file_path)
+    elif file_ext == ".txt":
+        entities = process_text(temp_file_path)
+    elif file_ext == ".docx":
+        entities = process_doc(temp_file_path)
+    else:
+        entities = []
 
     # Remove the temporary file
     os.remove(temp_file_path)
@@ -82,4 +115,4 @@ if uploaded_file is not None:
         for label, text in entities:
             st.write(f"{label.upper():{30}} - {text}")
     else:
-        st.write("No entities found in the PDF.")
+        st.write("No entities found in the file.")

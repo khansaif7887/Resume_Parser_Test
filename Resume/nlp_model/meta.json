@@ -18,17 +18,8 @@
   },
   "labels":{
     "ner":[
-      "College Name",
-      "Companies worked at",
-      "Degree",
-      "Designation",
-      "Email Address",
-      "Graduation Year",
-      "Location",
-      "Name",
-      "Skills",
-      "UNKNOWN",
-      "Years of Experience"
+      "ADDRESS",
+      "NAME"
     ]
   },
   "pipeline":[
